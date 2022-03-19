@@ -64,4 +64,13 @@ class TransactionController extends Controller
         $message = "Trasaction Created Successfully";
         return apiResponse($data,$message,$statusCode);
     }
+
+    public function updateArea(Request $request){
+        $user = User::where("public_key",$request->pubKey)->first();
+        $user->update(["area" => $request->area]);
+        $data = [];
+        $message = "update successfull";
+        $statusCode = 200;
+        return apiResponse($data,$message,$statusCode);
+    }
 }

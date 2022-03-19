@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 
@@ -18,5 +19,13 @@ class UserController extends Controller
         ];
         $message = "user info";
         return apiResponse($data,$message,$statusCode);
+    }
+
+    public function allUsers(){
+        $user = User::all();
+        $statusCode = 200;
+        $data = $user;
+        $message = "user info";
+        return apiResponse($data,$message,$statusCode); 
     }
 }

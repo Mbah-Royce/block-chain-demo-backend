@@ -22,6 +22,8 @@ use Illuminate\Support\Facades\Route;
 Route::middleware('auth:sanctum')->get('/user', function (Request $request) {
     return $request->user();
 });
+Route::GET("/user/all",[UserController::class,'allUsers']);
+Route::POST("user/area/update",[TransactionController::class,'updateArea']);
 Route::POST("/user/register",[RegisterController::class,'register']);
 Route::POST("/user/login",[LoginController::class,'login']);
 Route::POST("/user/transaction",[TransactionController::class,'create']);
