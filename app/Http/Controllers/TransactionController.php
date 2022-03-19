@@ -12,7 +12,7 @@ class TransactionController extends Controller
 {
     public function create(TransactionRequest $transactionRequest){
         $userSender = User::where("public_key",$transactionRequest->sender)->first();
-        if($userSender->area > $transactionRequest->amount){
+        if($transactionRequest->amount > $userSender->area){
             $data = [];
             $statusCode = 422;
             $message = "Amount invalid";
