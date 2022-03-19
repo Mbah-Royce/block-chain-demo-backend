@@ -21,7 +21,7 @@ class CreateUsersTable extends Migration
             $table->string('password')->nullable();
             $table->string('private_key');
             $table->string('public_key');
-            $table->integer("area")->nullable();
+            $table->integer("area")->default(0);
             $table->rememberToken();
             $table->timestamps();
         });

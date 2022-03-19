@@ -11,6 +11,13 @@ use Illuminate\Http\Request;
 class TransactionController extends Controller
 {
     public function create(TransactionRequest $transactionRequest){
+        $userSender = User::where("public_key",$transactionRequest->sender)->first();
+        if($userSender->area > $transactionRequest->amount){
+            $data = [];
+            $statusCode = 422;
+            $message = "Amount invalid";
+            return apiResponse($data,$message,$statusCode);
+        }
         $transaction = Transaction::create([
             "amount" => $transactionRequest->amount,
             "reciever" => $transactionRequest->reciever,
@@ -18,7 +25,6 @@ class TransactionController extends Controller
             "signature" => $transactionRequest->signature,
         ]);
         $userReciver = User::where("public_key",$transactionRequest->reciever)->first();
-        $userSender = User::where("public_key",$transactionRequest->sender)->first();
         $userReciver->update(["area" => $transactionRequest->amount + $userReciver->area]);
         $userSender->update(["area" => $userSender->area - $transactionRequest->amount]);
         $nonce = null;
