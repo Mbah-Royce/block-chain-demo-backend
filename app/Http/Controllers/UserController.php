@@ -15,7 +15,8 @@ class UserController extends Controller
             'publicKey' => $user->public_key,
             'privateKey' => $user->private_key,
             'area' => $user->area,
-            'id' => $user->id
+            'id' => $user->id,
+            'name' => $user->name
         ];
         $message = "user info";
         return apiResponse($data,$message,$statusCode);

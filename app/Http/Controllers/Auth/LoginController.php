@@ -30,7 +30,8 @@ class LoginController extends Controller
                 'privateKey' => $user->private_key,
                 'token' => $token,
                 'area' => $user->area,
-                'id' => $user->id
+                'id' => $user->id,
+                'name' => $user->name
             ];
         // }else{
         //     $message = "Access Denied";

@@ -30,7 +30,8 @@ class RegisterController extends Controller
             'privateKey' => $registerRequest->privateKey,
             'token' => $token,
             'area' => $user->area,
-            'id' => $user->id
+            'id' => $user->id,
+            'name' => $user->name
         ];
         $message = "Wallet Created Successfully";
         $statusCode = 201;
