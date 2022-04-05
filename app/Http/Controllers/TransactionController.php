@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Events\NewBlock;
+use App\Events\NewTransaction;
 use App\Http\Requests\TransactionRequest;
 use App\Models\Block;
 use App\Models\LandCertificate;
@@ -42,6 +43,7 @@ class TransactionController extends Controller
                     "area" => $landCetificate->area,
                     'type' => $transactionRequest->type
                 ]);
+                $this->newTrans($userSender->name,$userReciever->name,$transaction->area);
                 $data['block'] = $this->createBlock(
                     $transaction->id,
                     $transaction->area,
@@ -78,6 +80,7 @@ class TransactionController extends Controller
                 "signature" => $transactionRequest->signature,
                 'type' => $transactionRequest->type
             ]);
+            $this->newTrans($userSender->name,$userReciever->name,$transaction->area);
             $data['block']  = $this->createBlock(
             $transaction->id,
             $transaction->area,
@@ -111,6 +114,7 @@ class TransactionController extends Controller
                 "signature" => $transactionRequest->signature,
                 'type' => $transactionRequest->type
             ]);
+            $this->newTrans($userSender->name,$userReciever->name,$transaction->area);
             $data['block']  = $this->createBlock(
             $transaction->id,
             $transaction->area,
@@ -173,6 +177,15 @@ class TransactionController extends Controller
         $recieverWalletId = $userReciever->wallet->id;
         $block->wallet()->attach($senderWalletId, ['transaction_id' => $transId]);
         $block->wallet()->attach($recieverWalletId, ['transaction_id' => $transId]);
+    }
+
+    public function newTrans($senderName,$reciverName,$area){
+        $transaction = [
+            "sender" => $senderName,
+            "reciever" => $reciverName,
+            "area" => $area
+        ];
+        NewTransaction::dispatch($transaction);
     }
 
 }

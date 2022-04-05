@@ -33,6 +33,6 @@ class NewTransaction implements ShouldBroadcast
      */
     public function broadcastOn()
     {
-        return new PrivateChannel('new-transaction');
+        return new Channel('new-transaction');
     }
 }
