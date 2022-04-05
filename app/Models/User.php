@@ -49,4 +49,44 @@ class User extends Authenticatable
     {
         $this->attributes['password'] =  Hash::make($value);
     }
+
+    /**
+     * Get the user associated with the User
+     *
+     * @return \Illuminate\Database\Eloquent\Relations\HasOne
+     */
+    public function wallet()
+    {
+        return $this->hasOne(Wallet::class);
+    }
+
+    /**
+     * Get all of the landCertificates for the User
+     *
+     * @return \Illuminate\Database\Eloquent\Relations\HasMany
+     */
+    public function landCertificate()
+    {
+        return $this->hasMany(LandCertificate::class);
+    }
+
+    /**
+     * Get all of the portions for the User
+     *
+     * @return \Illuminate\Database\Eloquent\Relations\HasMany
+     */
+    public function partition()
+    {
+        return $this->hasMany(Partitions::class);
+    }
+
+    /**
+     * The roles that belong to the User
+     *
+     * @return \Illuminate\Database\Eloquent\Relations\BelongsToMany
+     */
+    public function roles()
+    {
+        return $this->belongsToMany(Role::class, 'role_user');
+    }
 }

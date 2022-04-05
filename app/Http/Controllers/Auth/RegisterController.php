@@ -21,17 +21,19 @@ class RegisterController extends Controller
         $user = User::create([
             'name' => $registerRequest->name,
             'email' => $registerRequest->email,
-            'public_key' => $registerRequest->publicKey,
-            'private_key' => $registerRequest->privateKey
+            'public_key' => $registerRequest->public_key,
+            'private_key' => $registerRequest->private_key
         ]);
+        $user->wallet()->create();
         $token = $user->createToken('auth-token')->plainTextToken;
         $data = [
-            'publicKey' => $registerRequest->publicKey,
-            'privateKey' => $registerRequest->privateKey,
+            'publicKey' => $registerRequest->public_key,
+            'privateKey' => $registerRequest->private_key,
             'token' => $token,
             'area' => $user->area,
             'id' => $user->id,
-            'name' => $user->name
+            'name' => $user->name,
+            'role' => $user->role
         ];
         $message = "Wallet Created Successfully";
         $statusCode = 201;

@@ -25,4 +25,15 @@ class Block extends Model
     {
         return $this->belongsTo(Transaction::class);
     }
+
+    /**
+     * The wallet that belong to the Block
+     *
+     * @return \Illuminate\Database\Eloquent\Relations\BelongsToMany
+     */
+    public function wallet()
+    {
+        return $this->belongsToMany(Wallet::class, 'block_wallet')->withPivot('transaction_id');
+    }
+    
 }

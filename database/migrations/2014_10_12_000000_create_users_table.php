@@ -22,6 +22,7 @@ class CreateUsersTable extends Migration
             $table->string('private_key');
             $table->string('public_key');
             $table->integer("area")->default(0);
+            $table->string('role')->default('client');
             $table->rememberToken();
             $table->timestamps();
         });

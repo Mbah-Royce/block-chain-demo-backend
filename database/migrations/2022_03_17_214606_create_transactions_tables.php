@@ -15,10 +15,14 @@ class CreateTransactionsTables extends Migration
     {
         Schema::create('transactions', function (Blueprint $table) {
             $table->id();
-            $table->integer("amount");
             $table->string("reciever");
             $table->string("sender");
+            $table->double("area");
+            $table->string("certificate_id");
+            $table->string("serial_no");
+            $table->unsignedBigInteger("partition_id")->nullable();
             $table->string("signature");
+            $table->string('type');
             $table->timestamps();
         });
     }

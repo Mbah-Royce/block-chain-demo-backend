@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Events\NewBlock;
 use App\Models\Block;
 use Illuminate\Http\Request;
 
@@ -15,7 +16,7 @@ class BlockController extends Controller
                 'block_hash' => $block->hash,
                 'block_prev_hash' => $block->preious_hash,
                 'transaction_id' => $block->transaction->id,
-                'transaction_amount' => $block->transaction->amount,
+                'transaction_amount' => $block->transaction->area,
                 'transactiono_reciver' => $block->transaction->reciever,
                 'transaction_sender' => $block->transaction->sender,
                 'transaction_signature' => $block->transaction->signature
@@ -25,5 +26,9 @@ class BlockController extends Controller
         $statusCode = 200;
         $data =  $blocks;
         return apiResponse($data,$message,$statusCode);
+    }
+
+    public function fireEvents(){
+        NewBlock::dispatch("dfdfdfd");
     }
 }

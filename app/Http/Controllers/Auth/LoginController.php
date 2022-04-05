@@ -20,24 +20,25 @@ class LoginController extends Controller
     public function login(LoginRequest $request){
 
         // if(Auth::attempt(['public_key' => $request->publicKey, 'private_key' => $request->privateKey])){
-            $user =  User::where("public_key",$request->publicKey)->first();
-            // $user = User::where("privateKey",$request->privateKey)->first();
-            $token = $user->createToken('auth-token')->plainTextToken;
-            $message = "Access Granted";
-            $statusCode = 200;
-            $data = [
-                'publicKey' => $user->public_key,
-                'privateKey' => $user->private_key,
-                'token' => $token,
-                'area' => $user->area,
-                'id' => $user->id,
-                'name' => $user->name
-            ];
-        // }else{
-        //     $message = "Access Denied";
-        //     $statusCode = 401;
-        //     $data = [];
-        // }
+            $user =  User::where(["public_key"=>$request->public_key],["private_key"=>$request->private_key])->first();
+            if($user){
+                $token = $user->createToken('auth-token')->plainTextToken;
+                $message = "Access Granted";
+                $statusCode = 200;
+                $data = [
+                    'publicKey' => $user->public_key,
+                    'privateKey' => $user->private_key,
+                    'token' => $token,
+                    'area' => $user->area,
+                    'id' => $user->id,
+                    'name' => $user->name,
+                    'role' => $user->role
+                ];
+            }else{
+                $message = "Access Denied";
+                $statusCode = 422;
+                $data = [];
+            }
         return apiResponse($data,$message,$statusCode);
     }
 }

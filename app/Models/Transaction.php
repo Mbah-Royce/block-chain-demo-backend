@@ -10,10 +10,15 @@ class Transaction extends Model
     use HasFactory;
     protected $table = 'transactions';
     protected $fillable = [
-        "amount",
         "reciever",
         "sender",
+        "area",
+        "certificate_id",
+        "serial_no",
+        "partition_id",
         "signature",
+        "amount",
+        "type"
     ];
 
     /**

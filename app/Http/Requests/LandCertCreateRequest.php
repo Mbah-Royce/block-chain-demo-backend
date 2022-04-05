@@ -4,7 +4,7 @@ namespace App\Http\Requests;
 
 use Illuminate\Foundation\Http\FormRequest;
 
-class RegisterRequest extends FormRequest
+class LandCertCreateRequest extends FormRequest
 {
     /**
      * Determine if the user is authorized to make this request.
@@ -24,10 +24,11 @@ class RegisterRequest extends FormRequest
     public function rules()
     {
         return [
-            'email' => 'required|string|email|unique:users,email',
-            'name' => 'required|string',
-            'public_key' => 'required|string',
-            'private_key' => 'required|string'
+            "reciever" => "required|string|exists:users,public_key",
+            "location" => "required|string",
+            "area" => "required|numeric",
+            "signature" => "required|string",
+            "sender" => "required|string"
         ];
     }
 }
