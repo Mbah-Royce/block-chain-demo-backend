@@ -6,6 +6,7 @@ use App\Events\NewBlock;
 use App\Events\NewTransaction;
 use App\Http\Requests\TransactionRequest;
 use App\Models\Block;
+use App\Models\Coordinate;
 use App\Models\LandCertificate;
 use App\Models\Partitions;
 use App\Models\Transaction;
@@ -20,7 +21,7 @@ class TransactionController extends Controller
         $statusCode = 201;
         $userSender = User::where("public_key",$transactionRequest->sender)->first();
         $userReciever = User::where("public_key",$transactionRequest->reciever)->first();
-        $landCetificate = LandCertificate::where(['serial_no' => $transactionRequest->serial_no,'user_id' => $userSender->id])->first();
+        $landCetificate = LandCertificate::where(['serial_no' => $transactionRequest->serial_no,'user_id' => auth()->user()->id])->first();
         if(!$landCetificate){
             $data = [];
             $message = "Certificate not foound";
@@ -59,6 +60,8 @@ class TransactionController extends Controller
                 $statusCode = 422; 
             }
         }else if($transactionRequest->type == 'portion-title'){
+            //update the land to partitiond
+            //create 2 partitions one for reciver and sender
             if(!$transactionRequest->area || $transactionRequest->area > $landCetificate->area){
                 $data = [];
                 $message = "Error in area";
@@ -81,7 +84,7 @@ class TransactionController extends Controller
                 'type' => $transactionRequest->type
             ]);
             $this->newTrans($userSender->name,$userReciever->name,$transaction->area);
-            $data['block']  = $this->createBlock(
+            $data['block']  = createBlock(
             $transaction->id,
             $transaction->area,
             $transaction->reciever,
@@ -115,7 +118,7 @@ class TransactionController extends Controller
                 'type' => $transactionRequest->type
             ]);
             $this->newTrans($userSender->name,$userReciever->name,$transaction->area);
-            $data['block']  = $this->createBlock(
+            $data['block']  = createBlock(
             $transaction->id,
             $transaction->area,
             $transaction->reciever,
@@ -187,5 +190,4 @@ class TransactionController extends Controller
         ];
         NewTransaction::dispatch($transaction);
     }
-
 }

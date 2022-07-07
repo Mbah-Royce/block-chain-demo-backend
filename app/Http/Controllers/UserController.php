@@ -2,6 +2,8 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\LandCertificate;
+use App\Models\Partitions;
 use App\Models\Transaction;
 use App\Models\User;
 use Illuminate\Http\Request;
@@ -31,12 +33,94 @@ class UserController extends Controller
         return apiResponse($data,$message,$statusCode); 
     }
 
-    public function getPortions(){
+    public function getLand(){
         $user = Auth::user();
-        $data = $user->partition;
-        $statusCode = 200;
-        $message = "user portions";
-        return apiResponse($data,$message,$statusCode); 
+        $data = [];
+        $message = "listed successfully";
+        $statusCdoe = 200;
+        $data = LandCertificate::where(["user_id" => $user->id,'partitioned' => false])->get()->map(function($certificate){
+            return [
+                "id" => $certificate->feature_id,
+                "type" => "Feature",
+                "properties" => [],
+                "geometry" => [
+                    "coordinates" => [$certificate->coordinate()->get()->map(function($coord){
+                        return[
+                            $coord->lat,$coord->lng
+                        ];
+                    })],
+                    "type" => $certificate->feature_type,
+                ],
+                // "area" => $certificate->area,
+                // "serial_no" => $certificate->serial_no,
+                // "user" => $certificate->user
+            ];
+        });
+        return apiResponse($data, $message, $statusCdoe);
+    }
+
+    public function getPartitions(){
+        $user = Auth::user();
+        $data = [];
+        $message = "listed successfully";
+        $statusCdoe = 200;
+        $data = Partitions::where(["user_id" => $user->id])->get()->map(function($partition){
+            if($partition->feature_type == "Polygon"){
+                if($partition->coordinate_lenth == NULL){
+                    return [
+                        "id" => $partition->feature_id,
+                        "type" => "Feature",
+                        "properties" => [],
+                        "geometry" => [
+                            "coordinates" => [$partition->coordinate()->get()->map(function($coord){
+                                return[
+                                    $coord->lat,$coord->lng
+                                ];
+                            })],
+                            "type" => $partition->feature_type,
+                        ],
+                    ];
+                }else{
+                    $coordinates = [];
+                    for ($i=0; $i < $partition->coordinate_lenth ; $i++) { 
+                        $coordinates[$i] = $partition->coordinate()->where(["array_position" => $i])->get()->map(function($coord){
+                            return[
+                                $coord->lat,$coord->lng
+                            ];
+                        });
+                    }
+                    return [
+                        "id" => "",
+                        "type" => "Feature",
+                        "properties" => [],
+                        "geometry" => [
+                            "coordinates" => $coordinates,
+                            "type" => $partition->feature_type,
+                        ],
+                    ];
+                }
+
+            }else{
+
+            }
+            return [
+                "id" => $partition->feature_id,
+                "type" => "Feature",
+                "properties" => [],
+                "geometry" => [
+                    "coordinates" => [$partition->coordinate()->get()->map(function($coord){
+                        return[
+                            $coord->lat,$coord->lng
+                        ];
+                    })],
+                    "type" => $partition->feature_type,
+                ],
+                // "area" => $certificate->area,
+                // "serial_no" => $certificate->serial_no,
+                // "user" => $certificate->user
+            ];
+        });
+        return apiResponse($data, $message, $statusCdoe);
     }
 
     public function getCertificates(){
@@ -47,9 +131,17 @@ class UserController extends Controller
         return apiResponse($data,$message,$statusCode); 
     }
 
+    public function getPortions(){
+        $user = Auth::user();
+        $data = $user->partition;
+        $statusCode = 200;
+        $message = "user certificates";
+        return apiResponse($data,$message,$statusCode); 
+    }
+
     public function getTransStarts(){
         $user = Auth::user();
-        $Certificates = $user->landCertificate;
+        $Certificates = $user->landCertificate()->where(['partitioned' => false]);
         $numCertificates = $Certificates->count();
         $CertificatesLandSum = $Certificates->sum('area');
         $certPartitionArea = 0;

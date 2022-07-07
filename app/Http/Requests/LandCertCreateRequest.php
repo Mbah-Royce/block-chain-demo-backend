@@ -25,10 +25,12 @@ class LandCertCreateRequest extends FormRequest
     {
         return [
             "reciever" => "required|string|exists:users,public_key",
-            "location" => "required|string",
             "area" => "required|numeric",
             "signature" => "required|string",
-            "sender" => "required|string"
+            "sender" => "required|string",
+            "featureId" => "required|string",
+            "geometryType" => "required|string",
+            "geometryCoordinates" => "required|array"
         ];
     }
 }

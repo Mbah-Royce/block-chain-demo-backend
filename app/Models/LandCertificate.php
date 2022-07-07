@@ -11,10 +11,12 @@ class LandCertificate extends Model
 
     protected $fillable = [
         "user_id",
-        "location",
+        "feature_id",
+        "feature_type",
         "area",
         "owner_name",
-        "serial_no"
+        "serial_no",
+        "partitioned"
     ];
 
     /**
@@ -35,5 +37,15 @@ class LandCertificate extends Model
     public function partition()
     {
         return $this->hasMany(Partitions::class);
+    }
+
+    /**
+     * Get the coordinate that owns the LandCertificate
+     *
+     * @return \Illuminate\Database\Eloquent\Relations\BelongsTo
+     */
+    public function coordinate()
+    {
+        return $this->hasMany(Coordinate::class);
     }
 }

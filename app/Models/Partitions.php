@@ -15,6 +15,9 @@ class Partitions extends Model
         'location',
         'user_id',
         'land_certificate_id',
+        'feature_type',
+        'coordinate_lenth',
+        'feature_id'
     ];
 
     /**
@@ -35,5 +38,15 @@ class Partitions extends Model
     public function certificate()
     {
         return $this->belongsTo(LandCertificate::class);
+    }
+
+    /**
+     * Get the coordinate that owns the LandCertificate
+     *
+     * @return \Illuminate\Database\Eloquent\Relations\BelongsTo
+     */
+    public function coordinate()
+    {
+        return $this->hasMany(PartitionCordinate::class,'partition_id','id');
     }
 }

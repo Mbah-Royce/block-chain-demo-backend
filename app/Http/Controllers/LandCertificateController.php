@@ -13,6 +13,7 @@ use Carbon\Carbon;
 use Exception;
 use Illuminate\Database\Eloquent\ModelNotFoundException;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
 
 class LandCertificateController extends Controller
 {
@@ -22,15 +23,23 @@ class LandCertificateController extends Controller
         $message = "created successfully";
         $statusCdoe = 201;
         try {
-            $user = User::where("public_key",$request->reciever)->first();
-            $userS = User::where("public_key",$request->sender)->first();
-            if($user){
+            $user = User::where("public_key", $request->reciever)->first();
+            $userS = User::where("public_key", $request->sender)->first();
+            if ($user) {
                 $landCetificate = $user->landCertificate()->create([
-                    "location" => $request->location,
+                    "feature_type" => $request->geometryType,
+                    "feature_id" => $request->featureId,
                     "area" => $request->area,
                     "owner_name" => $user->name,
-                    "serial_no" => $this->generateRandomString().Carbon::now()->format('s')
+                    "serial_no" => $this->generateRandomString() . Carbon::now()->format('s')
                 ]);
+                $cor = $request->geometryCoordinates;
+                foreach ($cor as $coordinate) {
+                    $landCetificate->coordinate()->create([
+                        'lat' => $coordinate[0],
+                        'lng' => $coordinate[1]
+                    ]);
+                }
                 $transaction = Transaction::create([
                     "reciever" => $request->reciever,
                     "sender" => $request->sender,
@@ -41,7 +50,7 @@ class LandCertificateController extends Controller
                     "area" => $landCetificate->area,
                     'type' => "whole-land"
                 ]);
-                $this->newTrans($userS->name,$user->name,$request->area);
+                $this->newTrans($userS->name, $user->name, $request->area);
                 $data['block'] = $this->createBlock(
                     $transaction->id,
                     $transaction->area,
@@ -53,14 +62,14 @@ class LandCertificateController extends Controller
                 );
             }
         } catch (Exception $e) {
-            $message = "Error : ".$e->getMessage();
+            $message = "Error : " . $e->getMessage();
             $statusCdoe = 500;
-        } catch (ModelNotFoundException $e){
+        } catch (ModelNotFoundException $e) {
             $message = "Error : Model not found";
             $statusCdoe = 404;
         }
 
-        return apiResponse($data,$message,$statusCdoe);
+        return apiResponse($data, $message, $statusCdoe);
     }
 
     public function userCertificates()
@@ -72,17 +81,18 @@ class LandCertificateController extends Controller
             $user = User::find(auth()->id);
             $data = $user->landCertificate;
         } catch (Exception $e) {
-            $message = "Error : ".$e->getMessage();
+            $message = "Error : " . $e->getMessage();
             $statusCdoe = 500;
-        } catch (ModelNotFoundException $e){
+        } catch (ModelNotFoundException $e) {
             $message = "Error : Model Not Found";
             $statusCdoe = 404;
         }
-        
-        return apiResponse($data,$message,$statusCdoe);
+
+        return apiResponse($data, $message, $statusCdoe);
     }
 
-    public function generateRandomString($length = 10) {
+    public function generateRandomString($length = 10)
+    {
         $characters = '0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ';
         $charactersLength = strlen($characters);
         $randomString = '';
@@ -92,30 +102,32 @@ class LandCertificateController extends Controller
         return $randomString;
     }
 
-    public function createBlock($transId,$transAmt,$transReciver,$transSender,$transSignature,$userSender,$userReciever)
+    public function createBlock($transId, $transAmt, $transReciver, $transSender, $transSignature, $userSender, $userReciever)
     {
         $nonce = null;
         $hash = null;
         $block = Block::orderBy('id', 'desc')->first();
-        if($block){
+        if ($block) {
             $prevHash = $block->hash;
             $prevBlockId = $block->id + 1;
-            
-        }else{
+        } else {
             $prevHash = "0000000000000000000000000000000000000000000000000000000000";
             $prevBlockId = 1;
         }
-        for ( $i = 0; $i < 500000; ++$i ){
-            $hash = hash('sha256',
-            $prevHash.
-            $prevBlockId.
-            $i.
-            $transId.
-            $transAmt.
-            $transReciver.
-            $transSender.
-            $transSignature,false);
-            if(substr($hash,0,4) === "0000"){
+        for ($i = 0; $i < 500000; ++$i) {
+            $hash = hash(
+                'sha256',
+                $prevHash .
+                    $prevBlockId .
+                    $i .
+                    $transId .
+                    $transAmt .
+                    $transReciver .
+                    $transSender .
+                    $transSignature,
+                false
+            );
+            if (substr($hash, 0, 4) === "0000") {
                 $nonce = $i;
                 break;
             }
@@ -137,19 +149,71 @@ class LandCertificateController extends Controller
             'transaction_sender' => $block->transaction->sender,
             'transaction_signature' => $block->transaction->signature
         ];
-        NewBlock::dispatch($newBlock);
+        // NewBlock::dispatch($newBlock);
         $senderWalletId = $userSender->wallet->id;
         $recieverWalletId = $userReciever->wallet->id;
         $block->wallet()->attach($senderWalletId, ['transaction_id' => $transId]);
         $block->wallet()->attach($recieverWalletId, ['transaction_id' => $transId]);
     }
 
-    public function newTrans($senderName,$reciverName,$area){
+    public function newTrans($senderName, $reciverName, $area)
+    {
         $transaction = [
             "sender" => $senderName,
             "reciever" => $reciverName,
             "area" => $area
         ];
-        NewTransaction::dispatch($transaction);
+        // NewTransaction::dispatch($transaction);
+    }
+
+    public function getCertificatesFeature()
+    {
+        $data = [];
+        $message = "listed successfully";
+        $statusCdoe = 200;
+        $data = LandCertificate::get()->map(function ($certificate) {
+            return [
+                "id" => $certificate->feature_id,
+                "type" => "Feature",
+                "properties" => [],
+                "geometry" => [
+                    "coordinates" => [$certificate->coordinate()->get()->map(function ($coord) {
+                        return [
+                            $coord->lat, $coord->lng
+                        ];
+                    })],
+                    "type" => $certificate->feature_type,
+                ],
+                // "area" => $certificate->area,
+                // "serial_no" => $certificate->serial_no,
+                // "user" => $certificate->user
+            ];
+        });
+        return apiResponse($data, $message, $statusCdoe);
+    }
+
+    public function showLand($serialNo)
+    {
+        $user = Auth::user();
+        $data = [];
+        $message = "listed successfully";
+        $statusCdoe = 200;
+        $certificate = LandCertificate::where(["user_id" => $user->id, "serial_no" => $serialNo])->first();
+        $data = [
+            "id" => $certificate->feature_id,
+            "type" => "Feature",
+            "properties" => [],
+            "geometry" => [
+                "coordinates" => [$certificate->coordinate()->get()->map(function ($coord) {
+                    return [
+                        floatval($coord->lat),floatval($coord->lng)
+                    ];
+                })],
+                "type" => $certificate->feature_type,
+            ],
+            "area" => $certificate->area,
+
+        ];
+        return apiResponse($data, $message, $statusCdoe);
     }
 }
