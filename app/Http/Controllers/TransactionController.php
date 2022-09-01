@@ -15,24 +15,28 @@ use Illuminate\Http\Request;
 
 class TransactionController extends Controller
 {
-    public function create(TransactionRequest $transactionRequest){
-        $data = [];
+    public function create(TransactionRequest $transactionRequest)
+    {
+        
+        $data = [$transactionRequest->partitionId];
         $message = "Transaction Successful";
         $statusCode = 201;
-        $userSender = User::where("public_key",$transactionRequest->sender)->first();
-        $userReciever = User::where("public_key",$transactionRequest->reciever)->first();
-        $landCetificate = LandCertificate::where(['serial_no' => $transactionRequest->serial_no,'user_id' => auth()->user()->id])->first();
-        if(!$landCetificate){
-            $data = [];
-            $message = "Certificate not foound";
-            $statusCode = 404;
-            return apiResponse($data,$message,$statusCode); 
-        }
-        if($transactionRequest->type == 'whole-land'){
-            if($landCetificate->partition->isEmpty()){
+        // return apiResponse($data,$message,$statusCode);
+        $userSender = User::where("public_key", $transactionRequest->sender)->first();
+        $userReciever = User::where("public_key", $transactionRequest->reciever)->first();
+
+        if ($transactionRequest->type == 'whole-land') {
+            $landCetificate = LandCertificate::where(['serial_no' => $transactionRequest->serial_no, 'user_id' => auth()->user()->id])->first();
+            if (!$landCetificate) {
+                $data = [];
+                $message = "Certificate not foound";
+                $statusCode = 404;
+                return apiResponse($data, $message, $statusCode);
+            }
+            if (!$landCetificate->partitioned) {
                 $landCetificate->update([
                     'owner_name' => $userReciever->name,
-                    'user_id' => $userReciever->id 
+                    'user_id' => $userReciever->id
                 ]);
                 $transaction = Transaction::create([
                     "reciever" => $transactionRequest->reciever,
@@ -44,7 +48,7 @@ class TransactionController extends Controller
                     "area" => $landCetificate->area,
                     'type' => $transactionRequest->type
                 ]);
-                $this->newTrans($userSender->name,$userReciever->name,$transaction->area);
+                $this->newTrans($userSender->name, $userReciever->name, $transaction->area);
                 $data['block'] = $this->createBlock(
                     $transaction->id,
                     $transaction->area,
@@ -55,24 +59,16 @@ class TransactionController extends Controller
                     $userReciever
                 );
                 $data['transaction'] = $transaction;
-            }else{
+            } else {
                 $message = "Transaction Unsucccessful land already has a portion";
-                $statusCode = 422; 
-            }
-        }else if($transactionRequest->type == 'portion-title'){
-            //update the land to partitiond
-            //create 2 partitions one for reciver and sender
-            if(!$transactionRequest->area || $transactionRequest->area > $landCetificate->area){
-                $data = [];
-                $message = "Error in area";
                 $statusCode = 422;
-            return apiResponse($data,$message,$statusCode); 
             }
-            $partition = $landCetificate->partition()->create([
-                'area' => $transactionRequest->area,
-                'location' => $landCetificate->location,
-                'user_id' => $userReciever->id,
+        } else if ($transactionRequest->type == 'whole-partition') {
+            $partition = Partitions::where(['user_id' => auth()->user()->id, 'id' => $transactionRequest->partitionId])->first();
+            $partition->update([
+                'user_id' => $userReciever->id
             ]);
+            $landCetificate = $partition->certificate;
             $transaction = Transaction::create([
                 "reciever" => $transactionRequest->reciever,
                 "sender" => $transactionRequest->sender,
@@ -83,77 +79,50 @@ class TransactionController extends Controller
                 "signature" => $transactionRequest->signature,
                 'type' => $transactionRequest->type
             ]);
-            $this->newTrans($userSender->name,$userReciever->name,$transaction->area);
+            $this->newTrans($userSender->name, $userReciever->name, $transaction->area);
             $data['block']  = createBlock(
-            $transaction->id,
-            $transaction->area,
-            $transaction->reciever,
-            $transaction->sender,
-            $transaction->signature,
-            $userSender,
-            $userReciever);
+                $transaction->id,
+                $transaction->area,
+                $transaction->reciever,
+                $transaction->sender,
+                $transaction->signature,
+                $userSender,
+                $userReciever
+            );
             $data['transaction'] = $transaction;
-        } else if($transactionRequest->type == 'portion-portion'){
-            $partition = Partitions::find($transactionRequest->partitionId);
-            if($partition->user_id != $userSender->id  || $transactionRequest->area > $partition->area){
-                $data = [];
-                $message = "Error in area";
-                $statusCode = 422;
-            return apiResponse($data,$message,$statusCode); 
-            }
-            $landCetificate = LandCertificate::find($partition->land_certificate_id);
-            $partition = $landCetificate->partition()->create([
-                'area' => $transactionRequest->area,
-                'location' => $landCetificate->location,
-                'user_id' => $userReciever->id,
-            ]);
-            $transaction = Transaction::create([
-                "reciever" => $transactionRequest->reciever,
-                "sender" => $transactionRequest->sender,
-                "area" => $transactionRequest->area,
-                "certificate_id" => $landCetificate->id,
-                "serial_no" => $transactionRequest->serial_no,
-                "partition_id" => $partition->id,
-                "signature" => $transactionRequest->signature,
-                'type' => $transactionRequest->type
-            ]);
-            $this->newTrans($userSender->name,$userReciever->name,$transaction->area);
-            $data['block']  = createBlock(
-            $transaction->id,
-            $transaction->area,
-            $transaction->reciever,
-            $transaction->sender,
-            $transaction->signature,
-            $userSender,
-            $userReciever);
-            $data['transaction'] = $transaction;
+        }else{
+            $message = "transaction type not valid";
+            $statusCode = 422;
         }
 
-        return apiResponse($data,$message,$statusCode);
+        return apiResponse($data, $message, $statusCode);
     }
 
-    public function createBlock($transId,$transAmt,$transReciver,$transSender,$transSignature,$userSender,$userReciever)
+    public function createBlock($transId, $transAmt, $transReciver, $transSender, $transSignature, $userSender, $userReciever)
     {
         $nonce = null;
         $hash = null;
         $block = Block::orderBy('id', 'desc')->first();
-        if($block){
+        if ($block) {
             $prevHash = $block->hash;
-        }else{
+        } else {
             $prevHash = "0000000000000000000000000000000000000000000000000000000000";
         }
         $prevBlockId = $block->id + 1;
-        for ( $i = 0; $i < 500000; ++$i ){
-            $hash = hash('sha256',
-            $prevHash.
-            $prevBlockId.
-            $i.
-            $transId.
-            $transAmt.
-            $transReciver.
-            $transSender.
-            $transSignature,false);
-            if(substr($hash,0,4) === "0000"){
+        for ($i = 0; $i < 500000; ++$i) {
+            $hash = hash(
+                'sha256',
+                $prevHash .
+                    $prevBlockId .
+                    $i .
+                    $transId .
+                    $transAmt .
+                    $transReciver .
+                    $transSender .
+                    $transSignature,
+                false
+            );
+            if (substr($hash, 0, 4) === "0000") {
                 $nonce = $i;
                 break;
             }
@@ -182,7 +151,8 @@ class TransactionController extends Controller
         $block->wallet()->attach($recieverWalletId, ['transaction_id' => $transId]);
     }
 
-    public function newTrans($senderName,$reciverName,$area){
+    public function newTrans($senderName, $reciverName, $area)
+    {
         $transaction = [
             "sender" => $senderName,
             "reciever" => $reciverName,

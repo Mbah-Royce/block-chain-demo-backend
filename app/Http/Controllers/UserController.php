@@ -19,7 +19,8 @@ class UserController extends Controller
             'privateKey' => $user->private_key,
             'area' => $user->area,
             'id' => $user->id,
-            'name' => $user->name
+            'name' => $user->name,
+            'role' => $user->role
         ];
         $message = "user info";
         return apiResponse($data,$message,$statusCode);
@@ -126,6 +127,14 @@ class UserController extends Controller
     public function getCertificates(){
         $user = Auth::user();
         $data = $user->landCertificate;
+        $statusCode = 200;
+        $message = "user certificates";
+        return apiResponse($data,$message,$statusCode); 
+    }
+
+    public function getValidCertificates(){
+        $user = Auth::user();
+        $data = $user->landCertificate()->where(['partitioned' => false])->get();
         $statusCode = 200;
         $message = "user certificates";
         return apiResponse($data,$message,$statusCode); 

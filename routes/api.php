@@ -3,6 +3,7 @@
 use App\Http\Controllers\Auth\RegisterController;
 use App\Http\Controllers\Auth\LoginController;
 use App\Http\Controllers\BlockController;
+use App\Http\Controllers\GovernmentController;
 use App\Http\Controllers\LandCertificateController;
 use App\Http\Controllers\PartionTitleTransactionController;
 use App\Http\Controllers\PartitionsController;
@@ -46,8 +47,17 @@ Route::group(['middleware'=>['auth:sanctum'],'prefix'=>'user'],function(){
     Route::GET("/lands/info",[UserController::class,'getCertificates']); //display data for all land 
     Route::GET("/trans-stats",[UserController::class,'getTransStarts']);
     Route::GET("/user-trans",[UserController::class,'getLastTrans']);
-    Route::POST("/transaction",[TransactionController::class,'create']);
+    Route::GET("/valid/land",[UserController::class,'getValidCertificates']);
+});
 
+Route::group(['middleware'=>['auth:sanctum'],'prefix'=>'government'],function(){
+    Route::GET("/all-land",[GovernmentController::class,'getLand']); //display geojson of all land
+    Route::GET("/all-partitions",[UserController::class,'getPartitions']); //display geojson of all user partitions
+    Route::GET("/partitions/info",[UserController::class,'getPortions']); //display data for a partition 
+    Route::GET("/lands/info",[UserController::class,'getCertificates']); //display data for all land 
+    Route::GET("/trans-stats",[UserController::class,'getTransStarts']);
+    Route::GET("/user-trans",[UserController::class,'getLastTrans']);
+    Route::GET("/valid/land",[UserController::class,'getValidCertificates']);
 });
 
 Route::group(['middleware'=>['auth:sanctum'],'prefix'=>'transaction'],function(){
@@ -55,7 +65,9 @@ Route::group(['middleware'=>['auth:sanctum'],'prefix'=>'transaction'],function()
     Route::GET("/land/{id}",[LandCertificateController::class,'showLand']); //display geojson for a paricular land
 
     Route::POST("/certificate",[LandCertificateController::class,'create']); //create land certificate
-    Route::POST("/partition-title",[PartionTitleTransactionController::class,'create']); 
+    Route::POST("/partition-title",[PartionTitleTransactionController::class,'create']);
+    Route::POST("/whole-transfer",[TransactionController::class,'create']);
+ 
 
 });
 
